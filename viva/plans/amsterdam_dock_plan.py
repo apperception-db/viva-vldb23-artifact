@@ -56,15 +56,15 @@ AmsterdamDockTree = {
                 }
             ]
         },
-        {
-            'val': [explode_preds, (object_filter, ['night'])],
-            'children': [
-                {
-                    'val': 'svm',
-                    'children': []
-                }
-            ]
-        }
+        # {
+        #     'val': [explode_preds, (object_filter, ['night'])],
+        #     'children': [
+        #         {
+        #             'val': 'svm',
+        #             'children': []
+        #         }
+        #     ]
+        # }
     ]
 }
 

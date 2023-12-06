@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import argparse
+sys.path.append('/home/chanwutk/viva-vldb23-artifact/viva/udfs/deep_sort/deep_sort/deep/reid')
 from viva.utils.config import viva_setup, ConfigManager
 config = ConfigManager()
 viva_setup()
@@ -76,7 +77,7 @@ def get_args():
                         dest='ingestwarmup',
                         help='Perform ingest (transcoding) warmup')
     parser.add_argument('--selectivityfraction', '-s', type=float,
-                        required=False, default=0,
+                        required=False, default=0.1,
                         dest='selectivityfraction',
                         help='Fraction of frames to estimate selectivity over (Default: 0). 0 to disable estimating.')
     parser.add_argument('--selectivityrandom', '-r', action='store_true',
