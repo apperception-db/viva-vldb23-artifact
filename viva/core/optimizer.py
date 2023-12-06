@@ -74,6 +74,7 @@ class Optimizer:
     @property
     def sel_profiles(self):
         if self._sel_profiles or self.sel_fraction == 0:
+            print('0', self._sel_profiles)
             return self._sel_profiles
         logging.warn(f'Optimizer->selectivity estimation: {self.sel_fraction*100}%.')
         start_sel = now()
@@ -85,6 +86,7 @@ class Optimizer:
         self._log_times['est_sel'] = e2e_sel
         # save to file
         save_selectivities(self.keys['selectivity'], self._sel_profiles)
+        print(self.sel_fraction, self._sel_profiles)
         return self._sel_profiles
 
     @property

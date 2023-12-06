@@ -76,7 +76,7 @@ def get_args():
                         dest='ingestwarmup',
                         help='Perform ingest (transcoding) warmup')
     parser.add_argument('--selectivityfraction', '-s', type=float,
-                        required=False, default=0.1,
+                        required=False, default=0,
                         dest='selectivityfraction',
                         help='Fraction of frames to estimate selectivity over (Default: 0). 0 to disable estimating.')
     parser.add_argument('--selectivityrandom', '-r', action='store_true',
