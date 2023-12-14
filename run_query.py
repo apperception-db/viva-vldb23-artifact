@@ -39,7 +39,7 @@ def savert(t: float, text: str):
 with open('benchmark.txt', 'w') as f:
     f.write('')
 
-def run_plan(viva_session, df, plan, sel_fraction, sel_random, keys, costminmax, f1thresh, opt_target):
+def run_plan(viva_session: VIVA, df, plan, sel_fraction, sel_random, keys, costminmax, f1thresh, opt_target):
     starttime = time.time()
     # create optimizer and find optimal plan
     opt = Optimizer(
@@ -94,9 +94,13 @@ def run_plan(viva_session, df, plan, sel_fraction, sel_random, keys, costminmax,
 
     starttime = time.time()
     df = df.sort(df.id.asc())
-    df_s = df.select(df.uri, df.id, df.label, df.score)
+    df_s = df.select(df.uri, df.id, df.label, df.score, df.track)
     df_s.show(truncate=False)
     savert(starttime, 'sort-select-show')
+    
+    import pickle
+    with open(f'./res-{time.time()}.pkl', 'wb') as f:
+        pickle.dump(df_s.toPandas(), f)
 
     return df, opt, (best_plan_str, num_trees, num_plans)
 
