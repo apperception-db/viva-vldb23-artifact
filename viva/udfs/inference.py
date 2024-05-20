@@ -214,6 +214,8 @@ def yolo_model_udf(model_fn):
     @pandas_udf(InferenceResults)
     def predict(content_series_iter: Iterator[pd.Series]) -> Iterator[pd.DataFrame]:
         model = model_fn()
+        # assert model_fn.__dict__['model___name'] == 'yolov5n', model_fn.__dict__['model___name']
+        print('model ----------------------------', model_fn.__dict__['model___name'])
 
         for content_series in content_series_iter:
             # Reverse content series for creating batches

@@ -38,7 +38,7 @@ AmsterdamDockTree = {
     'children': [
         {
             'val': [explode_preds, quality_filter, (objects_or, [['car', 'person']]), \
-                    calculate_movement, remove_stationary, find_directions],
+                    calculate_movement, remove_stationary, find_directions, left_turns],
             'children': [
                 {
                     'val': 'ot',
@@ -56,15 +56,15 @@ AmsterdamDockTree = {
                 }
             ]
         },
-        {
-            'val': [explode_preds, (object_filter, ['night'])],
-            'children': [
-                {
-                    'val': 'svm',
-                    'children': []
-                }
-            ]
-        }
+        # {
+        #     'val': [explode_preds, (object_filter, ['night'])],
+        #     'children': [
+        #         {
+        #             'val': 'svm',
+        #             'children': []
+        #         }
+        #     ]
+        # }
     ]
 }
 

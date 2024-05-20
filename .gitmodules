@@ -7,3 +7,6 @@
 [submodule "viva/udfs/deep_sort"]
 	path = viva/udfs/deep_sort
 	url = https://github.com/mikel-brostrom/Yolov5_DeepSort_Pytorch.git
+[submodule "viva/udfs/monodepth2"]
+	path = viva/udfs/monodepth2
+	url = git@github.com:apperception-db/monodepth2.git

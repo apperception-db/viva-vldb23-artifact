@@ -4,7 +4,7 @@ storage:
     output: 'output/'
 
 execution:
-    gpu: False
+    gpu: True
     proxy_confidence_thresh: 0.0
     deepface_common_prefix_num_layers: 31
 

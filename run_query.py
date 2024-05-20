@@ -2,9 +2,11 @@ import logging
 import os
 import sys
 import argparse
+sys.path.append('/home/chanwutk/viva-vldb23-artifact/viva/udfs/deep_sort/deep_sort/deep/reid')
 from viva.utils.config import viva_setup, ConfigManager
 config = ConfigManager()
 viva_setup()
+import time
 
 import torch
 from uuid import uuid1
@@ -19,7 +21,26 @@ from viva.core.utils import (
 )
 device = 'gpu' if config.get_value('execution', 'gpu') else 'cpu'
 
-def run_plan(viva_session, df, plan, sel_fraction, sel_random, keys, costminmax, f1thresh, opt_target):
+def savenrow(nrow: int):
+    print(f'   ----------------------- nrow --------------', nrow)
+    with open('nrow.txt', 'w') as f:
+        f.write(str(nrow))
+
+def savert(t: float, text: str):
+    e = time.time() - t
+    print(f'   ----------------------- {text} --------------', e)
+    with open('benchmark.txt', 'r') as f:
+        bm = f.read()
+    with open('benchmark.txt', 'w') as f:
+        f.write(bm)
+        f.write('\n')
+        f.write(text + ': ' + str(e))
+
+with open('benchmark.txt', 'w') as f:
+    f.write('')
+
+def run_plan(viva_session: VIVA, df, plan, sel_fraction, sel_random, keys, costminmax, f1thresh, opt_target):
+    starttime = time.time()
     # create optimizer and find optimal plan
     opt = Optimizer(
         plan.all_plans, df, session=viva_session, sel_fraction=sel_fraction,
@@ -27,13 +48,18 @@ def run_plan(viva_session, df, plan, sel_fraction, sel_random, keys, costminmax,
         f1_threshold=f1thresh, opt_target=opt_target
     )
 
+    savert(starttime, 'create-optimizer')
+
+    starttime = time.time()
     # Set hints in case accuracy needs to be computed
     opt.set_hints(plan.hints)
 
     # Get optimal plan
     best_plan = opt.get_optimal_plan()
     best_execution_plan = best_plan['plan']
+    savert(starttime, 'get-plan')
 
+    starttime = time.time()
     device = best_plan['platform']
     for k in best_plan:
         # don't add the plan, doesn't serialize for pandas
@@ -45,22 +71,36 @@ def run_plan(viva_session, df, plan, sel_fraction, sel_random, keys, costminmax,
     num_trees = len(plan.all_trees)
     num_plans = len(plan.all_plans)
 
+    print('cuda available', torch.cuda.is_available())
+    print('exeuction', config.get_value('execution', 'gpu'))
     use_cuda = torch.cuda.is_available() and config.get_value('execution', 'gpu')
     if device == 'cpu' and use_cuda:
         print(f'Opt target: {opt_target} plan requires {device}. Exit and rerun with {device}.')
         return df, opt, (best_plan_str, num_trees, num_plans)
+    savert(starttime, 'update-plan')
 
+    starttime = time.time()
     if device == 'gpu':
         logging.warn('Query->GPU warmup.')
         df2 = ingest()
         _ = viva_session.run(df2, best_execution_plan, plan.hints)
         viva_session.reset_cache()
+    savert(starttime, 'warmup-gpu')
 
     # run the plan on df
+    starttime = time.time()
     df = viva_session.run(df, best_execution_plan, plan.hints)
+    savert(starttime, 'runtime')
+
+    starttime = time.time()
     df = df.sort(df.id.asc())
-    df_s = df.select(df.uri, df.id, df.label, df.score)
+    df_s = df.select(df.uri, df.id, df.label, df.score, df.track)
     df_s.show(truncate=False)
+    savert(starttime, 'sort-select-show')
+    
+    import pickle
+    with open(f'./res-{time.time()}.pkl', 'wb') as f:
+        pickle.dump(df_s.toPandas(), f)
 
     return df, opt, (best_plan_str, num_trees, num_plans)
 
@@ -97,7 +137,7 @@ def get_args():
                         choices=['performance', 'cost', 'dollar'],
                         help='Plan optimization target (Default: performance)')
     parser.add_argument('--query', '-q', type=str,
-                        required=False, default='angrybernie',
+                        required=False, default='amsterdamdock',
                         choices=['angrybernie', 'dunk', 'amsterdamdock', 'deepface'],
                         dest='query',
                         help='Query to run (Default: angrybernie)')
@@ -118,6 +158,7 @@ def main(args):
     sel_random = args.selectivityrandom
     opt_target = args.opttarget
 
+    starttime = time.time()
     start_ingest_v = now()
     df_i = ingest()
     if do_logging:
@@ -127,13 +168,16 @@ def main(args):
     if do_ingestwarmup:
         print('Ingest warmup complete')
         sys.exit(0)
+    savert(starttime, 'ingest')
 
+    starttime = time.time()
     input_dataset_hash = hash_input_dataset(df_i)
     log_times = create_log_dict(vars(args), config, input_dataset_hash)
     keys = {}
     keys['selectivity'] = keygenerator(log_times)
     log_times['canary'] = os.path.basename(canary)
     keys['f1'] = keygenerator(log_times)
+    savert(starttime, 'keys')
 
     if do_logging:
         log_times['ingest_video'] = (end_ingest_v - start_ingest_v)
@@ -156,6 +200,7 @@ def main(args):
         f1thresh, opt_target
     )
 
+    starttime = time.time()
     if do_logging:
         final_frame_count = df_res.select('id').distinct().count()
         best_plan, num_trees, num_plans = logging_data
@@ -164,12 +209,16 @@ def main(args):
         viva_session.update_log('final_frame_count', final_frame_count)
         viva_session.print_logs(query, best_plan, args.logging, args.logname)
         opt.save_plans(query, args.logging)
+    savert(starttime, 'log')
 
+    starttime = time.time()
     data = df_res.collect()
     if len(data) == 0 or len(data) == df_i.count():
         print('Query->no results.')
         return
+    savert(starttime, 'collect')
 
+    starttime = time.time()
     output_dir = 'output'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -177,6 +226,7 @@ def main(args):
     outname = f'{output_dir}/out-{str(uuid1())[0:7]}.mp4'
     write_video(data, outname)
     print(f'Done running: {query}. Results to: {outname}')
+    savert(starttime, 'write-videos')
 
 if __name__ == '__main__':
     main(get_args())

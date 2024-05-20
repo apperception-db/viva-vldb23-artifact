@@ -30,6 +30,8 @@ class ObjectDetectInference(AbstractInference):
             model.eval()
             model.to(device)
             return model
+        
+        yolo_fn.__dict__['model___name'] = size
 
         return yolo_model_udf(yolo_fn)
 
